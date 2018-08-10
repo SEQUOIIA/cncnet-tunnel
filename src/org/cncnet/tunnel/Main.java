@@ -55,6 +55,7 @@ public class Main {
     protected static int maxclients = 8;
     protected static String password = null;
     protected static int port = 50000;
+    protected static String bindaddress = "0.0.0.0";
     protected static String master = "http://cncnet.org/master-announce";
     protected static String masterpw = null;
     protected static boolean nomaster = false;
@@ -74,6 +75,8 @@ public class Main {
                 password = args[++i];
             } else if (args[i].equals("-port") && i < args.length - 1) {
                 port = Math.max(Math.abs(Integer.parseInt(args[++i])), 1024);
+            } else if (args[i].equals("-bindaddress") && i < args.length - 1) {
+                bindaddress = args[++i];
             } else if (args[i].equals("-master") && i < args.length - 1) {
                 master = args[++i];
             } else if (args[i].equals("-masterpw") && i < args.length - 1) {
@@ -89,7 +92,7 @@ public class Main {
             } else if (args[i].equals("-maintpw") && i < args.length - 1) {
                 maintpw = args[++i];
             } else if (args[i].equals("-help") || args[i].equals("-h") || args[i].equals("-?") || args[i].equals("/h") || args[i].equals("/?")) {
-                System.out.println("Arguments: [-name <string>] [-maxclients <number>] [-password <string>] [-port <number>] [-master <URL>] [-masterpw <string>] [-nomaster] [-logfile <path>] [-iplimit <number>] [-maintpw <string>]");
+                System.out.println("Arguments: [-name <string>] [-maxclients <number>] [-password <string>] [-port <number>] [-bindaddress <IP>] [-master <URL>] [-masterpw <string>] [-nomaster] [-logfile <path>] [-iplimit <number>] [-maintpw <string>]");
                 return;
             } else {
                 Main.log("Unknown parameter: " + args[i]);
@@ -154,13 +157,13 @@ public class Main {
             Selector selector = Selector.open();
             DatagramChannel channel = DatagramChannel.open();
             channel.configureBlocking(false);
-            channel.socket().bind(new InetSocketAddress("0.0.0.0", port));
+            channel.socket().bind(new InetSocketAddress(bindaddress, port));
             channel.register(selector, SelectionKey.OP_READ);
 
             controller = new TunnelController(name, password, port, maxclients, nomaster ? null : master, masterpw, iplimit);
 
             // setup our HTTP server
-            HttpServer server = HttpServer.create(new InetSocketAddress(port), 4);
+            HttpServer server = HttpServer.create(new InetSocketAddress(bindaddress, port), 4);
             server.createContext("/request", controller);
             server.createContext("/status", controller);
             if (maintpw != null) {
